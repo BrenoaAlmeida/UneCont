@@ -8,7 +8,7 @@ using Model;
 
 namespace Model.Migrations
 {
-    [DbContext(typeof(UneContext))]
+    [DbContext(typeof(UneContexto))]
     partial class UneContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

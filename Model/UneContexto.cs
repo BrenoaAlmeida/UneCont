@@ -2,13 +2,13 @@
 
 namespace Model
 {    
-    public class UneContext : DbContext
+    public class UneContexto : DbContext
     {
-        public UneContext(DbContextOptions<UneContext> options) : base(options)
+        public UneContexto(DbContextOptions<UneContexto> options) : base(options)
         {
         }
 
-        public UneContext()
+        public UneContexto()
         {            
         }
 

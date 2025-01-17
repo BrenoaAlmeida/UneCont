@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Repository;
 using Service;
-using Service.Enumeradores;
 
-namespace Avaliacao.Controllers
+namespace Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/log")]
     [ApiController]
     public class LogsController : ControllerBase
     {
         private readonly UnitOfWork _unitOfWork;
+        ArquivoService _arquivoService;
+        LogService _logService;
 
         /// <summary>
         /// Obtem um arquivo no formato "Minha CDN" e o tranforma no formato "Agora", podendo passar como  entrar uma URL contendo o arquivo TXT ou um  identificador
@@ -28,48 +27,77 @@ namespace Avaliacao.Controllers
         public LogsController(UnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
+            _arquivoService = new ArquivoService();
+            _logService = new LogService(unitOfWork);
         }
 
-        [HttpPost]
-        [Route("TransformarArquivo")]
-        public ActionResult<IEnumerable<string>> TransformarArquivo(string url, bool retornarPath = false,
-            //string url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt",            
-            int id = 0)
+        [HttpGet]
+        [Route("transformar-formato")]
+        public ActionResult<IEnumerable<string>> TransformarFormato(string url, bool retornarPath)
         {
             try
             {
-                if (string.IsNullOrEmpty(url) && id == 0 || !string.IsNullOrEmpty(url) && id != 0)                
-                    return BadRequest("É necessario informar a url ou o Identificador");                
-                
+                if (string.IsNullOrEmpty(url))
+                    return BadRequest("É necessario informar a url");
 
-                var logService = new LogService();
-                var log = new Log();
-                if (!retornarPath)
+                /*
+                    Transformação de um formato de Log para outro;
+                    ○ Formato de saída pode variar (O usuário vai selecionar na requisição):
+                    resultado: 
+                        path do arquivo salvo no servidor OU log transformado
+                 */
+
+                // acoes:
+                // - transformar o log
+                // - retornar o path ou o proprio log transformado
+
+                var caminhoDoArquivo = _logService.TransformarLogMinhaCdnParaAgora(url);
+
+                if (retornarPath)
                 {
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        log = logService.TransformarLogMinhaCdnParaAgora(url);
-                        log = _unitOfWork.Log.SalvarLog(log);
-                    }
-                    else
-                    {
-                        log = _unitOfWork.Log.ObterLogPorIdentificador(id);
-                        log = logService.TransformarLogMinhaCdnParaAgora(log);
-                        log = _unitOfWork.Log.AtualizarLog(log);
-                    }                    
+                    var nomeDoArquivo = Path.GetFileName(caminhoDoArquivo);
+                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                    var path = $"/uploads/{nomeDoArquivo}";
+                    var fullUrl = new Uri(new Uri(baseUrl), path);
+                    return Ok(new { path = fullUrl });
+                }
+                else
+                {
+                    var arquivoEmTexto = System.IO.File.ReadAllTextAsync(caminhoDoArquivo).Result;
+                    return Content(arquivoEmTexto, "text/plain");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+
+        }
+
+        [HttpPost]
+        [Route("transformar-formato/{identificador}")]
+        public ActionResult<IEnumerable<string>> TransformarArquivo(int identificador, bool retornarCaminho)
+        {
+            try
+            {
+                if (identificador == 0)
+                    return BadRequest("É necessario informar o Identificador");
+
+                var log = new Log();
+                var caminhoDoArquivo = _logService.TransformarLogMinhaCdnParaAgora(identificador);
+                if (retornarCaminho)
+                {
 
                     var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    var path = $"/uploads/{log.LogArquivo.Where(l => l.TipoLog == UneContEnum.ETipoLog.Agora.ToString()).First().NomeArquivo}";
+                    var nomeDoArquivo = Path.GetFileName(caminhoDoArquivo);
+                    var path = $"/uploads/{nomeDoArquivo}";
                     var fullUrl = new Uri(new Uri(baseUrl), path);
 
                     return Ok(new { path = fullUrl });
                 }
                 else
                 {
-                    log = _unitOfWork.Log.ObterLogPorIdentificador(id);                    
-                    var arquivo = logService.TransformarLogSalvoEmArquivoLogAgora(log);
-
-                    var arquivoEmTexto = Encoding.UTF8.GetString(arquivo);
+                    var arquivoEmTexto = System.IO.File.ReadAllTextAsync(caminhoDoArquivo).Result;
                     return Content(arquivoEmTexto, "text/plain");
                 }
             }
@@ -81,73 +109,60 @@ namespace Avaliacao.Controllers
         }
 
         [HttpGet]
-        [Route("BuscarLogsSalvos")]
+        [Route("buscar-logs-salvos")]
         public ActionResult<string> BuscarLogsSalvos()
         {
-            var logs = _unitOfWork.Log.ObterLogsMinhaCdn();                        
+            var logs = _unitOfWork.LogMinhaCdn.ObterLogsMinhaCdn();
             return Ok(logs);
         }
 
         //Retorna todos os logs do banco no formato original "Minha CDN" e os logs no formato "Agora"
         [HttpGet]
-        [Route("BuscarLogTransformadosNoBackend")]
-        public ActionResult<string> BuscarLogTransformadosNoBackend(int id)
+        [Route("buscar-logs-transformados-no-backend/{identificador}")]
+        public ActionResult<string> BuscarLogTransformadosNoBackend(int identificador)
         {
-            var logService = new LogService();
-            var logs = _unitOfWork.Log.ObterLogPorIdentificador(id);
-            var memo = logService.BaixarARquivosEZIpar(logs).Result;
-            return File(memo.ToArray(), "application/zip", "modelos.zip");
+            var logs = _unitOfWork.Log.ObterLogPorIdentificador(identificador);
+            var arquivoZip = _arquivoService.BaixarARquivosEZipar(logs).Result;
+
+            if (arquivoZip == null)
+                return NotFound("Nenhum arquivo foi encontrado para o identificador fornecido!!");
+
+            return File(arquivoZip.ToArray(), "application/zip", "modelos.zip");
         }
 
         [HttpGet]
-        [Route("BuscaLogSalvosPorIdentificador")]
-        public ActionResult<string> BuscaLogSalvosPorIdentificador(int id)
+        [Route("buscar-logs-salvos-por-identificador/{identificador}")]
+        public ActionResult<string> BuscaLogSalvosPorIdentificador(int identificador)
         {
-            var logs = _unitOfWork.Log.ObterLogPorIdentificador(id);            
+            var logs = _unitOfWork.Log.ObterLogPorIdentificador(identificador);
             return Ok(logs);
         }
 
         [HttpGet]
-        [Route("BuscarLogsTransformadosPorIdentificador")]
-        public ActionResult<string> BuscarLogsTransformadosPorIdentificador(int id)
+        [Route("buscar-logs-transformados-por-identificador/{identificador}")]
+        public ActionResult<string> BuscarLogsTransformadosPorIdentificador(int identificador)
         {
-            var logs = _unitOfWork.Log.ObterLogsAgoraPorIdentificador(id);
+            var logs = _unitOfWork.LogAgora.ObterLogsAgoraPorIdentificador(identificador);
             return Ok(logs);
         }
 
         //Salvar o arquivo no servidor
         [HttpPost]
-        [Route("SalvarLogs")]
-        public ActionResult<string> SalvarLogs(string url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt")
+        [Route("salvar-logs")]
+        public ActionResult<string> SalvarLogs(string url)
         {
             try
             {
                 if (string.IsNullOrEmpty(url))
                     return BadRequest("É necessario preencher o campo Url");
-
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                var logService = new LogService();
-                var log = logService.MapearArquivoDeTextoParaMinhaCdn(url);
-                log = _unitOfWork.Log.SalvarLog(log);
+                
+                var log = _logService.SalvarLog(url);                
                 return Ok(new { mensagem = "Log foi salvo com sucesso!", log.Id });
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message.ToString());
             }
-        }
-
-        [HttpGet]
-        [Route("ObterLog/{id}")]
-        public ActionResult<string> ObterLog(string id = "1")
-        {
-            var log = _unitOfWork.Log.ObterLogPorIdentificador(Convert.ToInt32(id));
-            var arquivo = log.LogArquivo.Where(l => l.TipoLog == UneContEnum.ETipoLog.Agora.ToString()).First().Arquivo;
-            //Isso aqui baixo o arquivo
-            //return File(arquivo, "text/plain", "arquivo.txt");
-
-            var arquivoEmTexto = Encoding.UTF8.GetString(arquivo);
-            return Content(arquivoEmTexto, "text/plain");
         }
     }
 }

@@ -10,7 +10,7 @@ using Microsoft.OpenApi.Models;
 using Model;
 using Repository;
 
-namespace Avaliacao
+namespace Api
 {
     public class Startup
     {
@@ -23,7 +23,7 @@ namespace Avaliacao
         
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<UneContext>(
+            services.AddDbContext<UneContexto>(
                 options => options.UseSqlServer(Configuration.GetConnectionString("UneCont")));
 
             services.AddScoped<UnitOfWork>();

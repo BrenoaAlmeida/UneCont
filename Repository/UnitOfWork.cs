@@ -5,27 +5,22 @@ namespace Repository
 {
     public class UnitOfWork : IDisposable
     {
-        private UneContext _context;
+        private UneContexto _contexto;
 
-        public UnitOfWork(UneContext context)
+        public UnitOfWork(UneContexto contexto)
         {
-            _context = context;
+            _contexto = contexto;
         }
 
-        private LogRepository logRepository;
-        private LogMinhaCdnRepository logMinhaCdnRepository;
-        private LogAgoraRepository logAgoraRepository;
-        
-        public LogRepository Log => logRepository == null ? new LogRepository(_context) : logRepository;
-        
-        public LogMinhaCdnRepository LogMinhaCdn => logMinhaCdnRepository == null ? new LogMinhaCdnRepository(_context) : logMinhaCdnRepository;
-        
-        public LogAgoraRepository LogAgora => logAgoraRepository == null ? new LogAgoraRepository(_context) : logAgoraRepository;
+        private LogRepository _logRepository;
+        private LogMinhaCdnRepository _logMinhaCdnRepository;
+        private LogAgoraRepository _logAgoraRepository;
 
-        public void Save()
-        {
-            _context.SaveChanges();
-        }
+        public LogRepository Log => _logRepository ?? (_logRepository = new LogRepository(_contexto));        
+
+        public LogMinhaCdnRepository LogMinhaCdn => _logMinhaCdnRepository ?? (_logMinhaCdnRepository  = new LogMinhaCdnRepository(_contexto));
+        
+        public LogAgoraRepository LogAgora => _logAgoraRepository ?? (_logAgoraRepository = new LogAgoraRepository(_contexto));
 
         private bool disposed = false;
         protected virtual void Dispose(bool disposing)
@@ -34,7 +29,7 @@ namespace Repository
             {
                 if (disposing)
                 {
-                    _context.Dispose();
+                    _contexto.Dispose();
                 }
             }
             this.disposed = true;

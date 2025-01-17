@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Model;
@@ -8,51 +7,26 @@ namespace Repository
 {
     public class LogRepository
     {
-        private UneContext _context;
-        public LogRepository(UneContext context)
+        private UneContexto _contexto;
+        public LogRepository(UneContexto contexto)
         {
-            _context = context;
+            _contexto = contexto;
         }
 
-        public Log SalvarLog(Log log) { 
-            _context.Add(log);
-            _context.SaveChanges();
+        public Log SalvarLog(Log log) {
+            log.DataDeInsercao = DateTime.Now;
+            _contexto.Add(log);
+            _contexto.SaveChanges();
             return log;
-        }
-
-        public Log AtualizarLog(Log log)
-        {
-            _context.Update(log);
-            _context.SaveChanges();
-            return log;
-        }
-
-        public List<Log> ObterLog()
-        {
-            return _context.Log.ToList();
-        }
-        public List<LogMinhaCdn> ObterLogsMinhaCdn()
-        {            
-            return _context.LogMinhaCdn.ToList();
         }
 
         public Log ObterLogPorIdentificador(int id)
         {
-            return _context.Log.Where(l => l.Id == id)
+            return _contexto.Log.Where(l => l.Id == id)
                 .Include(l => l.LogAgora)
                 .Include(l => l.LogArquivo)
                 .Include(l => l.LogMinhaCdn)
                 .First();
-        }
-
-        public List<LogAgora> ObterLogsAgora()
-        {
-            return _context.LogAgora.ToList();
-        }
-
-        public List<LogAgora> ObterLogsAgoraPorIdentificador(int id)
-        {
-            return _context.LogAgora.Where(l => l.LogId == id).ToList();
         }
     }
 }

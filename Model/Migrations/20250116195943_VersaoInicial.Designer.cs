@@ -9,7 +9,7 @@ using Model;
 
 namespace Model.Migrations
 {
-    [DbContext(typeof(UneContext))]
+    [DbContext(typeof(UneContexto))]
     [Migration("20250116195943_VersaoInicial")]
     partial class VersaoInicial
     {

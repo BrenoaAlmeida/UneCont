@@ -5,12 +5,12 @@ namespace Tests
 {
     public class Helper
     {
-        public static UneContext ObterContextoEmMemoria()
+        public static UneContexto ObterContextoEmMemoria()
         {
-            var options = new DbContextOptionsBuilder<UneContext>()
+            var options = new DbContextOptionsBuilder<UneContexto>()
             .UseInMemoryDatabase(databaseName: "InMemoryDatabase")
             .Options;
-            return new UneContext(options);
+            return new UneContexto(options);
         }
     }
 }

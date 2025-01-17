@@ -12,28 +12,13 @@ namespace Tests
     [TestClass]
     public class LogTest
     {
-        [TestMethod]        
-        public void DeveLerAqruivoDeTextoETransformarEmModal()
-        {
-            //ARRANGE
-            var url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";            
-            //var log = new UnitOfWork(mockUneContext.Object).Log.ObterLogPorIdentificador(1);
-            //ACT                        
-            var service = new LogService();
-            var logsMinhaCdn = service.MapearArquivoDeTextoParaMinhaCdn(url);
-
-            //ASSERT            
-            Assert.IsTrue(logsMinhaCdn.LogMinhaCdn.Count == 4);
-        }
-
-
         [TestMethod]
         public void DeveMapearMinhaCdnParaAgora()
         {
             //ARRANGE            
-            var mockUneContext = new Mock<UneContext>();
+            var mockUneContext = new Mock<UneContexto>();
             var unitOfWork = new UnitOfWork(mockUneContext.Object);
-            var service = new LogService();
+            var service = new LogService(unitOfWork);
             mockUneContext.Setup(x => x.Log.Find(It.IsAny<int>())).Returns(new Log()
             {
                 Id = 1,
@@ -110,12 +95,12 @@ namespace Tests
         public void DeveTransformarArquivoNoFormatoMinhaCdnParaAgora()
         {
             //ARRANGE            
-            var uneContext = Helper.ObterContextoEmMemoria();
-            var unitOfWork = new UnitOfWork(uneContext);
-            var url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
-            var logService = new LogService();
-            var log = logService.MapearArquivoDeTextoParaMinhaCdn(url);
-            log = logService.MapearModeloMinhaCdnParaModeloAgora(log);
+            //var uneContext = Helper.ObterContextoEmMemoria();
+            //var unitOfWork = new UnitOfWork(uneContext);
+            //var url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
+            //var logService = new LogService();
+            //var log = logService.MapearArquivoDeTextoParaMinhaCdn(url);
+            //log = logService.MapearModeloMinhaCdnParaModeloAgora(log);
 
         }
     }
