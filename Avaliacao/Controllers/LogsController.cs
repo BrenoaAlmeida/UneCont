@@ -35,23 +35,12 @@ namespace Api.Controllers
             try
             {
                 if (string.IsNullOrEmpty(url))
-                    return BadRequest("É necessario informar a url");
-
-                /*
-                    Transformação de um formato de Log para outro;
-                    ○ Formato de saída pode variar (O usuário vai selecionar na requisição)
-                    resultado: 
-                        path do arquivo salvo no servidor OU log transformado
-                 */
-
-                // acoes:
-                // - transformar o log
-                // - retornar o path ou o proprio log transformado
+                    return BadRequest("É necessario informar a url");                
 
                 var result = _logService.TransformarLogMinhaCdnParaAgora(url, retornarPath);
 
+                // foi retornado o log transformado no formato Agora
                 if (!retornarPath)
-                    // foi retornado o log transformado no formato Agora
                     return Content(result, "text/plain");
 
                 // o log no formato Agora foi salvo em pasta do servidor e retornado seu caminho                
@@ -100,12 +89,12 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("buscar-logs-salvos")]
-        public ActionResult<string> BuscarLogsSalvos()
+        public ActionResult<List<Log>> BuscarLogsSalvos()
         {
             var logs = _logService.ObterLogs();
 
             if (logs == null)
-                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum registro encontrado");
+                return NotFound("Nenhum registro encontrado");
 
             return Ok(logs);
         }
@@ -115,14 +104,11 @@ namespace Api.Controllers
         [Route("buscar-logs-transformados-no-backend")]
         public ActionResult<string> BuscarLogTransformadosNoBackend()
         {
-
-            //TODO MELHORAR ESSE METODO
             var logsArquvio = _logService.ObterLogsArquivo();
 
             if (logsArquvio == null)
-                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
-
-            //TODO: Mostrar os 2 arquivos em texto na resposta do Swagger
+                return NotFound("Nenhum log foi encontrado para o identificador fornecido");
+            
             var result = _arquivoService.RetornarLogsEmTexto(logsArquvio);
 
             return Content(result, "text/plain");
@@ -130,23 +116,23 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("buscar-log-salvo/{identificador}")]
-        public ActionResult<string> BuscaLogSalvos(int identificador)
+        public ActionResult<Log> BuscaLogSalvo(int identificador)
         {
             var log = _logService.ObterLogPorIdentificador(identificador);
             if (log == null)
-                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
+                return NotFound("Nenhum log foi encontrado para o identificador fornecido");
 
             return Ok(log);
         }
 
         [HttpGet]
         [Route("buscar-logs-transformados-por-identificador/{identificador}")]
-        public ActionResult<string> BuscarLogsTransformadosPorIdentificador(int identificador)
+        public ActionResult<List<LogAgora>> BuscarLogsTransformadosPorIdentificador(int identificador)
         {
             var logs = _logService.ObterLogsAgoraPorIdentificador(identificador);
 
             if (logs == null)
-                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
+                return NotFound("Nenhum log foi encontrado para o identificador fornecido");
 
             return Ok(logs);
         }

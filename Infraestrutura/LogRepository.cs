@@ -29,7 +29,11 @@ namespace Infraestrutura
         }
 
         public List<Log> ObterLogs(){
-            var logs = _contexto.Log.ToList();
+           var logs = _contexto.Log
+                .Include(l => l.LogAgora)
+                .Include(l => l.LogArquivo)
+                .Include(l => l.LogMinhaCdn)
+                .ToList();
 
             if (logs.Count == 0)           
                 return null;
