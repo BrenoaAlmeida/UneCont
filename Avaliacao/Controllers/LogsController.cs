@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Model;
-using Repository;
 using Service;
+using Infraestrutura;
+using System.Net;
 
 namespace Api.Controllers
 {
@@ -24,11 +25,11 @@ namespace Api.Controllers
         /// <return>Returns comment</return>
         /// <response code="200">Ok</response>
 
-        public LogsController(UnitOfWork unitOfWork)
+        public LogsController(UnitOfWork unitOfWork, UneContexto contexto)
         {
             _unitOfWork = unitOfWork;
             _arquivoService = new ArquivoService();
-            _logService = new LogService(unitOfWork);
+            _logService = new LogService(unitOfWork, contexto);
         }
 
         [HttpGet]
@@ -42,7 +43,7 @@ namespace Api.Controllers
 
                 /*
                     Transformação de um formato de Log para outro;
-                    ○ Formato de saída pode variar (O usuário vai selecionar na requisição):
+                    ○ Formato de saída pode variar (O usuário vai selecionar na requisição)
                     resultado: 
                         path do arquivo salvo no servidor OU log transformado
                  */
@@ -51,21 +52,19 @@ namespace Api.Controllers
                 // - transformar o log
                 // - retornar o path ou o proprio log transformado
 
-                var caminhoDoArquivo = _logService.TransformarLogMinhaCdnParaAgora(url);
+                var result = _logService.TransformarLogMinhaCdnParaAgora(url, retornarPath);
 
-                if (retornarPath)
-                {
-                    var nomeDoArquivo = Path.GetFileName(caminhoDoArquivo);
-                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    var path = $"/uploads/{nomeDoArquivo}";
-                    var fullUrl = new Uri(new Uri(baseUrl), path);
-                    return Ok(new { path = fullUrl });
-                }
-                else
-                {
-                    var arquivoEmTexto = System.IO.File.ReadAllTextAsync(caminhoDoArquivo).Result;
-                    return Content(arquivoEmTexto, "text/plain");
-                }
+                if (!retornarPath)
+                    // foi retornado o log transformado no formato Agora
+                    return Content(result, "text/plain");
+
+                // o log no formato Agora foi salvo em pasta do servidor e retornado seu caminho
+                var nomeDoArquivo = Path.GetFileName(result);
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var path = $"/uploads/{nomeDoArquivo}";
+                var fullUrl = new Uri(new Uri(baseUrl), path);
+
+                return Ok(new { path = fullUrl });
             }
             catch (Exception ex)
             {
@@ -84,22 +83,19 @@ namespace Api.Controllers
                     return BadRequest("É necessario informar o Identificador");
 
                 var log = new Log();
-                var caminhoDoArquivo = _logService.TransformarLogMinhaCdnParaAgora(identificador);
+                var arquivoLogMinhaCdnComTextoOuCaminho = _logService.TransformarLogMinhaCdnParaAgora(identificador);
                 if (retornarCaminho)
                 {
 
                     var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    var nomeDoArquivo = Path.GetFileName(caminhoDoArquivo);
+                    var nomeDoArquivo = Path.GetFileName(arquivoLogMinhaCdnComTextoOuCaminho);
                     var path = $"/uploads/{nomeDoArquivo}";
                     var fullUrl = new Uri(new Uri(baseUrl), path);
 
                     return Ok(new { path = fullUrl });
                 }
                 else
-                {
-                    var arquivoEmTexto = System.IO.File.ReadAllTextAsync(caminhoDoArquivo).Result;
-                    return Content(arquivoEmTexto, "text/plain");
-                }
+                    return Content(arquivoLogMinhaCdnComTextoOuCaminho, "text/plain");
             }
             catch (Exception ex)
             {
@@ -156,12 +152,13 @@ namespace Api.Controllers
                 if (string.IsNullOrEmpty(url))
                     return BadRequest("É necessario preencher o campo Url");
                 
-                var log = _logService.SalvarLog(url);                
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var log =  _logService.SalvarLog(url, baseUrl).Result;
                 return Ok(new { mensagem = "Log foi salvo com sucesso!", log.Id });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message.ToString());
+                return StatusCode((int)HttpStatusCode.InternalServerError, ex.Message.ToString());
             }
         }
     }

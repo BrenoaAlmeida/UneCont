@@ -3,18 +3,17 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Model;
 
-namespace Repository
+namespace Infraestrutura
 {
-    public class LogRepository
+    public class LogInfraestrutura
     {
         private UneContexto _contexto;
-        public LogRepository(UneContexto contexto)
+        public LogInfraestrutura(UneContexto contexto)
         {
             _contexto = contexto;
         }
 
         public Log SalvarLog(Log log) {
-            log.DataDeInsercao = DateTime.Now;
             _contexto.Add(log);
             _contexto.SaveChanges();
             return log;

@@ -9,6 +9,8 @@ namespace Model
         [Key]
         public int Id { get; set; }
 
+        public int LogId { get; set; }
+
         [Required]
         [MaxLength(20)]
         public string ResponseSize { get; set; }
@@ -26,9 +28,7 @@ namespace Model
         public string Request { get; set; }
 
         [Required]
-        public string TimeTaken { get; set; }             
-        
-        public int LogId { get; set; }
+        public string TimeTaken { get; set; }                            
 
         [ForeignKey("LogId")]
         public Log Log { get; set; }

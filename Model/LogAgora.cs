@@ -39,9 +39,5 @@ namespace Model
         
         [ForeignKey("LogId")]
         public Log Log { get; set; }
-
-        [Required]
-        public DateTime DataHoraInsercao { get; set; }
-
     }
 }

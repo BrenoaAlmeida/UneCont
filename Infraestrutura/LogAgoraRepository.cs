@@ -2,12 +2,12 @@
 using System.Linq;
 using Model;
 
-namespace Repository
+namespace Infraestrutura
 {
-    public class LogAgoraRepository
+    public class LogAgoraInfraestrutura
     {
         private UneContexto _contexto;
-        public LogAgoraRepository(UneContexto contexto)
+        public LogAgoraInfraestrutura(UneContexto contexto)
         {
             _contexto = contexto;
         }

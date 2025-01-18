@@ -1,7 +1,0 @@
-Version: 1.0
-Date: 17/01/2025 17:02:23
-#Fields: provider http-method status-code uri-path time-taken response-size cache-status
-MINHA CDN  200 G 100.2 312 HIT
-MINHA CDN  200 P 319.4 101 MISS
-MINHA CDN  404 G 142.9 199 MISS
-MINHA CDN  200 G 245.1 312 INVALIDATE

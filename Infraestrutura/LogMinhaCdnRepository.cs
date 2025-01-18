@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Model;
 
-namespace Repository
+namespace Infraestrutura
 {
-    public class LogMinhaCdnRepository
+    public class LogMinhaCdnInfraestrutura
     {
         private UneContexto _contexto;
-        public LogMinhaCdnRepository(UneContexto context)
+        public LogMinhaCdnInfraestrutura(UneContexto context)
         {
             _contexto = context;
         }
