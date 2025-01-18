@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Model;
@@ -15,7 +16,6 @@ namespace Infraestrutura
 
         public Log SalvarLog(Log log) {
             _contexto.Add(log);
-            _contexto.SaveChanges();
             return log;
         }
 
@@ -25,7 +25,17 @@ namespace Infraestrutura
                 .Include(l => l.LogAgora)
                 .Include(l => l.LogArquivo)
                 .Include(l => l.LogMinhaCdn)
-                .First();
+                .FirstOrDefault();
+        }
+
+        public List<Log> ObterLogs(){
+            var logs = _contexto.Log.ToList();
+
+            if (logs.Count == 0)           
+                return null;
+
+            return logs;
+            
         }
     }
 }

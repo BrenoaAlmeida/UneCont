@@ -16,12 +16,15 @@ namespace Infraestrutura
         private LogInfraestrutura _logInfraestrutura;
         private LogMinhaCdnInfraestrutura _logMinhaCdnInfraestrutura;
         private LogAgoraInfraestrutura _logAgoraInfraestrutura;
+        private LogArquivoInfraestrutura _logArquivoInfraestrutura;
 
         public LogInfraestrutura Log => _logInfraestrutura ?? (_logInfraestrutura = new LogInfraestrutura(_contexto));        
 
         public LogMinhaCdnInfraestrutura LogMinhaCdn => _logMinhaCdnInfraestrutura ?? (_logMinhaCdnInfraestrutura  = new LogMinhaCdnInfraestrutura(_contexto));
         
         public LogAgoraInfraestrutura LogAgora => _logAgoraInfraestrutura ?? (_logAgoraInfraestrutura = new LogAgoraInfraestrutura(_contexto));
+
+        public LogArquivoInfraestrutura LogArquivo => _logArquivoInfraestrutura ?? (_logArquivoInfraestrutura = new LogArquivoInfraestrutura(_contexto));
 
         private bool disposed = false;
         protected virtual void Dispose(bool disposing)
@@ -42,9 +45,9 @@ namespace Infraestrutura
             GC.SuppressFinalize(this);
         }
 
-        public async Task IniciarTransacao()
+        public void Salvar()
         {
-            _contexto.Database.BeginTransaction();
+            _contexto.SaveChanges();
         }
     }
 }

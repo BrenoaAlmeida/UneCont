@@ -15,5 +15,7 @@ namespace Model
         public virtual DbSet<Log> Log { get; set; }
         public virtual DbSet<LogAgora> LogAgora { get; set; }
         public virtual DbSet<LogMinhaCdn> LogMinhaCdn { get; set; }
+
+        public virtual DbSet<LogArquivo> LogArquivo { get; set; }
     }    
 }

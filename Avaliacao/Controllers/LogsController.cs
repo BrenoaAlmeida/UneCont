@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Service;
-using Infraestrutura;
-using System.Net;
 
 namespace Api.Controllers
 {
@@ -13,8 +11,7 @@ namespace Api.Controllers
     [ApiController]
     public class LogsController : ControllerBase
     {
-        private readonly UnitOfWork _unitOfWork;
-        ArquivoService _arquivoService;
+        ArquivoHelper _arquivoService;
         LogService _logService;
 
         /// <summary>
@@ -25,11 +22,10 @@ namespace Api.Controllers
         /// <return>Returns comment</return>
         /// <response code="200">Ok</response>
 
-        public LogsController(UnitOfWork unitOfWork, UneContexto contexto)
+        public LogsController(LogService logService)
         {
-            _unitOfWork = unitOfWork;
-            _arquivoService = new ArquivoService();
-            _logService = new LogService(unitOfWork, contexto);
+            _arquivoService = new ArquivoHelper();
+            _logService = logService;
         }
 
         [HttpGet]
@@ -58,13 +54,11 @@ namespace Api.Controllers
                     // foi retornado o log transformado no formato Agora
                     return Content(result, "text/plain");
 
-                // o log no formato Agora foi salvo em pasta do servidor e retornado seu caminho
-                var nomeDoArquivo = Path.GetFileName(result);
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                var path = $"/uploads/{nomeDoArquivo}";
-                var fullUrl = new Uri(new Uri(baseUrl), path);
+                // o log no formato Agora foi salvo em pasta do servidor e retornado seu caminho                
+                var urlBase = $"{Request.Scheme}://{Request.Host}";
+                var urlCompleta = _arquivoService.RetornarCaminhoDoArquivoNoServidor(urlBase, result);
 
-                return Ok(new { path = fullUrl });
+                return Ok(new { path = urlCompleta });
             }
             catch (Exception ex)
             {
@@ -73,7 +67,7 @@ namespace Api.Controllers
 
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("transformar-formato/{identificador}")]
         public ActionResult<IEnumerable<string>> TransformarArquivo(int identificador, bool retornarCaminho)
         {
@@ -82,20 +76,20 @@ namespace Api.Controllers
                 if (identificador == 0)
                     return BadRequest("É necessario informar o Identificador");
 
-                var log = new Log();
-                var arquivoLogMinhaCdnComTextoOuCaminho = _logService.TransformarLogMinhaCdnParaAgora(identificador);
+                var result = _logService.TransformarLogMinhaCdnParaAgora(identificador, retornarCaminho);
+
+                if (string.IsNullOrEmpty(result))
+                    return StatusCode((int)HttpStatusCode.NoContent, "Nenhum registro encontrado para o identificador informado!");
+
                 if (retornarCaminho)
                 {
 
-                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                    var nomeDoArquivo = Path.GetFileName(arquivoLogMinhaCdnComTextoOuCaminho);
-                    var path = $"/uploads/{nomeDoArquivo}";
-                    var fullUrl = new Uri(new Uri(baseUrl), path);
-
-                    return Ok(new { path = fullUrl });
+                    var urlBase = $"{Request.Scheme}://{Request.Host}";
+                    var urlCompleta = _arquivoService.RetornarCaminhoDoArquivoNoServidor(urlBase, result);
+                    return Ok(new { path = urlCompleta });
                 }
                 else
-                    return Content(arquivoLogMinhaCdnComTextoOuCaminho, "text/plain");
+                    return Content(result, "text/plain");
             }
             catch (Exception ex)
             {
@@ -108,37 +102,52 @@ namespace Api.Controllers
         [Route("buscar-logs-salvos")]
         public ActionResult<string> BuscarLogsSalvos()
         {
-            var logs = _unitOfWork.LogMinhaCdn.ObterLogsMinhaCdn();
+            var logs = _logService.ObterLogs();
+
+            if (logs == null)
+                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum registro encontrado");
+
             return Ok(logs);
         }
 
         //Retorna todos os logs do banco no formato original "Minha CDN" e os logs no formato "Agora"
         [HttpGet]
-        [Route("buscar-logs-transformados-no-backend/{identificador}")]
-        public ActionResult<string> BuscarLogTransformadosNoBackend(int identificador)
+        [Route("buscar-logs-transformados-no-backend")]
+        public ActionResult<string> BuscarLogTransformadosNoBackend()
         {
-            var logs = _unitOfWork.Log.ObterLogPorIdentificador(identificador);
-            var arquivoZip = _arquivoService.BaixarARquivosEZipar(logs).Result;
 
-            if (arquivoZip == null)
-                return NotFound("Nenhum arquivo foi encontrado para o identificador fornecido!!");
+            //TODO MELHORAR ESSE METODO
+            var logsArquvio = _logService.ObterLogsArquivo();
 
-            return File(arquivoZip.ToArray(), "application/zip", "modelos.zip");
+            if (logsArquvio == null)
+                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
+
+            //TODO: Mostrar os 2 arquivos em texto na resposta do Swagger
+            var result = _arquivoService.RetornarLogsEmTexto(logsArquvio);
+
+            return Content(result, "text/plain");
         }
 
         [HttpGet]
-        [Route("buscar-logs-salvos-por-identificador/{identificador}")]
-        public ActionResult<string> BuscaLogSalvosPorIdentificador(int identificador)
+        [Route("buscar-log-salvo/{identificador}")]
+        public ActionResult<string> BuscaLogSalvos(int identificador)
         {
-            var logs = _unitOfWork.Log.ObterLogPorIdentificador(identificador);
-            return Ok(logs);
+            var log = _logService.ObterLogPorIdentificador(identificador);
+            if (log == null)
+                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
+
+            return Ok(log);
         }
 
         [HttpGet]
         [Route("buscar-logs-transformados-por-identificador/{identificador}")]
         public ActionResult<string> BuscarLogsTransformadosPorIdentificador(int identificador)
         {
-            var logs = _unitOfWork.LogAgora.ObterLogsAgoraPorIdentificador(identificador);
+            var logs = _logService.ObterLogsAgoraPorIdentificador(identificador);
+
+            if (logs == null)
+                return StatusCode((int)HttpStatusCode.NoContent, "Nenhum log foi encontrado para o identificador fornecido");
+
             return Ok(logs);
         }
 
@@ -151,9 +160,9 @@ namespace Api.Controllers
             {
                 if (string.IsNullOrEmpty(url))
                     return BadRequest("É necessario preencher o campo Url");
-                
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                var log =  _logService.SalvarLog(url, baseUrl).Result;
+
+                var urlBase = $"{Request.Scheme}://{Request.Host}";
+                var log = _logService.SalvarLog(url, urlBase).Result;
                 return Ok(new { mensagem = "Log foi salvo com sucesso!", log.Id });
             }
             catch (Exception ex)

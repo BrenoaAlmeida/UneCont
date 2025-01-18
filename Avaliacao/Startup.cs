@@ -9,6 +9,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Model;
 using Infraestrutura;
+using Service;
 
 namespace Api
 {
@@ -27,8 +28,15 @@ namespace Api
                 options => options.UseSqlServer(Configuration.GetConnectionString("UneCont")));
 
             services.AddScoped<UnitOfWork>();
+            services.AddScoped<LogService>();
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc()
+                .AddJsonOptions(options =>
+                {
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                })                
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            
 
             //Configuração do Swagger
             services.AddSwaggerGen(c =>
@@ -59,11 +67,7 @@ namespace Api
 
 
             //Configuração para exibir o conteudo da pasta uploads na url do projeto
-            app.UseStaticFiles(new StaticFileOptions { 
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
-                    RequestPath = "/uploads"
-            });
+            TratarArquivoEstatico(app);
 
             //Configuração do Swagger
             app.UseSwagger();
@@ -74,6 +78,17 @@ namespace Api
 
             app.UseHttpsRedirection();
             app.UseMvc();
+        }
+
+        private void TratarArquivoEstatico(IApplicationBuilder app)
+        {
+            var caminhoDosArquivosDeLog = ArquivoHelper.CriarPastaDeLogsSeNecessario();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(caminhoDosArquivosDeLog),
+                RequestPath = "/logs"
+            });
         }
     }
 }
