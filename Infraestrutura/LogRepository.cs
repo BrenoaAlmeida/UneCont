@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Model;
 
 namespace Infraestrutura
 {
-    public class LogInfraestrutura
+    public class LogRepository
+
     {
         private UneContexto _contexto;
-        public LogInfraestrutura(UneContexto contexto)
+        public LogRepository(UneContexto contexto)
         {
             _contexto = contexto;
         }
@@ -28,7 +28,7 @@ namespace Infraestrutura
                 .FirstOrDefault();
         }
 
-        public List<Log> ObterLogs(){
+        public IList<Log> ObterLogs(){
            var logs = _contexto.Log
                 .Include(l => l.LogAgora)
                 .Include(l => l.LogArquivo)

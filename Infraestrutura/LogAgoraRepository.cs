@@ -4,15 +4,15 @@ using Model;
 
 namespace Infraestrutura
 {
-    public class LogAgoraInfraestrutura
+    public class LogAgoraRepository
     {
         private UneContexto _contexto;
-        public LogAgoraInfraestrutura(UneContexto contexto)
+        public LogAgoraRepository(UneContexto contexto)
         {
             _contexto = contexto;
         }
 
-        public List<LogAgora> ObterLogsAgoraPorIdentificador(int id)
+        public IList<LogAgora> ObterLogsAgoraPorIdentificador(int id)
         {
             return _contexto.LogAgora.Where(l => l.LogId == id).ToList();
         }

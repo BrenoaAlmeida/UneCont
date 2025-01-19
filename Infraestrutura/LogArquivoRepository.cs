@@ -4,15 +4,15 @@ using Model;
 
 namespace Infraestrutura
 {
-    public class LogArquivoInfraestrutura
+    public class LogArquivoRepository
     {
         UneContexto _contexto;
-        public LogArquivoInfraestrutura(UneContexto contexto)
+        public LogArquivoRepository(UneContexto contexto)
         {
             _contexto = contexto;
         }
 
-        public List<LogArquivo> ObterLogsArquivo()
+        public IList<LogArquivo> ObterLogsArquivo()
         {
             var logsArquivo = _contexto.LogArquivo.ToList();
 

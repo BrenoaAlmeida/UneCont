@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Model;
 
 namespace Infraestrutura
@@ -13,20 +12,21 @@ namespace Infraestrutura
             _contexto = contexto;
         }
 
-        private LogInfraestrutura _logInfraestrutura;
-        private LogMinhaCdnInfraestrutura _logMinhaCdnInfraestrutura;
-        private LogAgoraInfraestrutura _logAgoraInfraestrutura;
-        private LogArquivoInfraestrutura _logArquivoInfraestrutura;
+        private LogRepository _logRepository;
+        private LogMinhaCdnRepository _logMinhaCdnRepository;
+        private LogAgoraRepository _logAgoraRepository;
+        private LogArquivoRepository _logArquivoRepository;
 
-        public LogInfraestrutura Log => _logInfraestrutura ?? (_logInfraestrutura = new LogInfraestrutura(_contexto));        
+        public LogRepository Log => _logRepository ?? (_logRepository = new LogRepository(_contexto));
 
-        public LogMinhaCdnInfraestrutura LogMinhaCdn => _logMinhaCdnInfraestrutura ?? (_logMinhaCdnInfraestrutura  = new LogMinhaCdnInfraestrutura(_contexto));
-        
-        public LogAgoraInfraestrutura LogAgora => _logAgoraInfraestrutura ?? (_logAgoraInfraestrutura = new LogAgoraInfraestrutura(_contexto));
+        public LogMinhaCdnRepository LogMinhaCdn => _logMinhaCdnRepository ?? (_logMinhaCdnRepository = new LogMinhaCdnRepository(_contexto));
 
-        public LogArquivoInfraestrutura LogArquivo => _logArquivoInfraestrutura ?? (_logArquivoInfraestrutura = new LogArquivoInfraestrutura(_contexto));
+        public LogAgoraRepository LogAgora => _logAgoraRepository ?? (_logAgoraRepository = new LogAgoraRepository(_contexto));
+
+        public LogArquivoRepository LogArquivo => _logArquivoRepository ?? (_logArquivoRepository = new LogArquivoRepository(_contexto));
 
         private bool disposed = false;
+
         protected virtual void Dispose(bool disposing)
         {
             if (!this.disposed)

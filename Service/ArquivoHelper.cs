@@ -74,7 +74,7 @@ namespace Service
             return urlCompleta;
         }
 
-        public string RetornarLogsEmTexto(List<LogArquivo> logsArquivo)
+        public string RetornarLogsEmTexto(IList<LogArquivo> logsArquivo)
         {
             string arquivosDeLogEmTexto = string.Empty;
 
@@ -133,7 +133,7 @@ namespace Service
             return CriarArquivo(nomeDoArquivo, textoDoLogNoFormatoMinhaCdn);
         }
 
-        public string TransformarLogMinhaCdnParaAgora(List<LogMinhaCdn> logsMinhaCdn, bool retornarPath)
+        public string TransformarLogMinhaCdnParaAgora(IList<LogMinhaCdn> logsMinhaCdn, bool retornarPath)
         {
             var dataAtual = DateTime.Now;
 

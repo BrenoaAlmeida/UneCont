@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Infraestrutura;
@@ -26,17 +27,17 @@ namespace Service
             return _unitOfWork.Log.ObterLogPorIdentificador(identificador);
         }
 
-        public List<Log> ObterLogs()
+        public IList<Log> ObterLogs()
         {
             return _unitOfWork.Log.ObterLogs();                        
         }
 
-        public List<LogArquivo> ObterLogsArquivo()
+        public IList<LogArquivo> ObterLogsArquivo()
         {
             return _unitOfWork.LogArquivo.ObterLogsArquivo();
         }
 
-        public List<LogAgora> ObterLogsAgoraPorIdentificador(int identificador)
+        public IList<LogAgora> ObterLogsAgoraPorIdentificador(int identificador)
         {
             var logsAgora = _unitOfWork.LogAgora.ObterLogsAgoraPorIdentificador(identificador);
 
@@ -56,6 +57,7 @@ namespace Service
             var log = new Log();
             log.DataDeInsercao = dataAtual;
             log.Url = url;
+            
             foreach (var linha in linhasLog)
             {
                 var logMinhaCdn = new LogMinhaCdn();
@@ -97,12 +99,14 @@ namespace Service
             TransformarLogMinhaCdnParaAgora(url, retornarPath: true, logArquivoAgora.NomeArquivo);
 
             var transaction = await _contexto.Database.BeginTransactionAsync();
+            
             try
             {
                 log = _unitOfWork.Log.SalvarLog(log);
                 _unitOfWork.Salvar();
                 transaction.Commit();
             }
+            
             catch (Exception ex)
             {
                 transaction.Rollback();
@@ -113,7 +117,6 @@ namespace Service
 
                 var caminhoLogAgora = Path.Combine(caminhoDaPastaDeLogs, logArquivoAgora.NomeArquivo);
                 _arquivoHelper.DeletarArquivo(caminhoLogAgora);                
-
                 throw;
             }
 

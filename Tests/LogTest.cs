@@ -31,6 +31,7 @@ namespace Tests
             var result = arquivoHelper.ExtrairLinhasDoLogMinhaCdnParaFormatoLogAgora(retornarPath: false, ref nomeDoArquivo, logMInhaCdn);
             var linhasDeLogAgora = result.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             var primeraLinhaLogAgora = linhasDeLogAgora[3].ToString().Split(" ");
+
             //ASSERT            
             if (primeraLinhaLogAgora[2] != "GET") //http-method
                 Assert.IsTrue(false);
@@ -68,6 +69,7 @@ namespace Tests
             var logAgora = File.ReadAllText(result);
             var linhasDeLogAgora = logAgora.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             var primeraLinhaLogAgora = linhasDeLogAgora[3].ToString().Split(" ");
+
             //ASSERT            
             if (primeraLinhaLogAgora[2] != "GET") //http-method
                 Assert.IsTrue(false);
