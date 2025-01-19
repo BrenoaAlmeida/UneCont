@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Model;
 using Service;
 
 namespace Api.Controllers
@@ -30,17 +30,21 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("transformar-formato")]
-        public ActionResult<IEnumerable<string>> TransformarFormato(string url, bool retornarPath)
+        public ActionResult<IEnumerable<string>> TransformarFormato(string url, bool? retornarCaminho)
         {
             try
             {
                 if (string.IsNullOrEmpty(url))
-                    return BadRequest("É necessario informar a url");                
+                    return BadRequest("É necessario informar a url");         
+                
+                if(retornarCaminho == null)
+                    return BadRequest("É necessario informar se deseja retornar o caminho do arquivo");
 
-                var result = _logService.TransformarLogMinhaCdnParaAgora(url, retornarPath);
+
+                var result = _logService.TransformarLogMinhaCdnParaAgora(url, retornarCaminho.Value);
 
                 // foi retornado o log transformado no formato Agora
-                if (!retornarPath)
+                if (!retornarCaminho.Value)
                     return Content(result, "text/plain");
 
                 // o log no formato Agora foi salvo em pasta do servidor e retornado seu caminho                
@@ -58,19 +62,22 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("transformar-formato/{identificador}")]
-        public ActionResult<IEnumerable<string>> TransformarArquivo(int identificador, bool retornarCaminho)
+        public ActionResult<IEnumerable<string>> TransformarArquivo(int identificador, bool? retornarCaminho)
         {
             try
             {
                 if (identificador == 0)
                     return BadRequest("É necessario informar o Identificador");
 
-                var result = _logService.TransformarLogMinhaCdnParaAgora(identificador, retornarCaminho);
+                if (retornarCaminho == null)
+                    return BadRequest("É necessario informar se deseja retornar o caminho do arquivo");
+
+                var result = _logService.TransformarLogMinhaCdnParaAgora(identificador, retornarCaminho.Value);
 
                 if (string.IsNullOrEmpty(result))
                     return NotFound("Nenhum registro encontrado para o identificador informado!");
 
-                if (retornarCaminho)
+                if (retornarCaminho.Value)
                 {
 
                     var urlBase = $"{Request.Scheme}://{Request.Host}";
@@ -89,9 +96,9 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("buscar-logs-salvos")]
-        public ActionResult<List<Log>> BuscarLogsSalvos()
+        public ActionResult<IList<LogDTO>> BuscarLogsSalvos()
         {
-            var logs = _logService.ObterLogs();
+            var logs = LogDTO.Criar(_logService.ObterLogs());
 
             if (logs == null)
                 return NotFound("Nenhum registro encontrado");
@@ -116,9 +123,9 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("buscar-log-salvo/{identificador}")]
-        public ActionResult<Log> BuscaLogSalvo(int identificador)
+        public ActionResult<LogDTO> BuscaLogSalvo(int identificador)
         {
-            var log = _logService.ObterLogPorIdentificador(identificador);
+            var log = LogDTO.Criar(_logService.ObterLogPorIdentificador(identificador));
             if (log == null)
                 return NotFound("Nenhum log foi encontrado para o identificador fornecido");
 
@@ -127,9 +134,9 @@ namespace Api.Controllers
 
         [HttpGet]
         [Route("buscar-logs-transformados-por-identificador/{identificador}")]
-        public ActionResult<List<LogAgora>> BuscarLogsTransformadosPorIdentificador(int identificador)
+        public ActionResult<List<LogAgoraDTO>> BuscarLogsTransformadosPorIdentificador(int identificador)
         {
-            var logs = _logService.ObterLogsAgoraPorIdentificador(identificador);
+            var logs = LogAgoraDTO.Criar(_logService.ObterLogsAgoraPorIdentificador(identificador));
 
             if (logs == null)
                 return NotFound("Nenhum log foi encontrado para o identificador fornecido");

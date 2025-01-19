@@ -31,10 +31,10 @@ namespace Api
             services.AddScoped<LogService>();
 
             services.AddMvc()
-                .AddJsonOptions(options =>
-                {
-                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                })                
+                //.AddJsonOptions(options =>
+                //{
+                //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                //})                
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             
 
