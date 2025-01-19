@@ -5,9 +5,6 @@ namespace Api.DTOs
 {
     public class LogAgoraDTO
     {
-        public int Id { get; set; }
-        public int LogId { get; set; }
-
         public string Provider = "MINHA CDN";
 
         public string HttpMethod { get; set; }
@@ -29,8 +26,6 @@ namespace Api.DTOs
                 return null;
 
             var logAgoraDTO = new LogAgoraDTO();
-            logAgoraDTO.Id = logAgora.Id;
-            logAgoraDTO.LogId = logAgora.LogId;
             logAgoraDTO.Provider = logAgora.Provider;
             logAgoraDTO.HttpMethod = logAgora.HttpMethod;
             logAgoraDTO.StatusCode = logAgora.StatusCode;

@@ -1,11 +1,7 @@
 ﻿namespace Api.DTOs
 {
     public class LogMinhaCdnDTO
-    {
-        public int Id { get; set; }
-
-        public int LogId { get; set; }
-
+    {    
         public string ResponseSize { get; set; }
 
         public string StatusCode { get; set; }

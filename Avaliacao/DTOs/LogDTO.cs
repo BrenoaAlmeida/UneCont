@@ -41,8 +41,6 @@ namespace Api.DTOs
             foreach (var logMinhaCdnModel in log.LogMinhaCdn)
             {
                 var logMinhaCdnDTO = new LogMinhaCdnDTO();
-                logMinhaCdnDTO.Id = logMinhaCdnModel.Id;
-                logMinhaCdnDTO.LogId = logMinhaCdnModel.LogId;
                 logMinhaCdnDTO.Request = logMinhaCdnModel.Request;
                 logMinhaCdnDTO.ResponseSize = logMinhaCdnModel.ResponseSize;
                 logMinhaCdnDTO.StatusCode = logMinhaCdnModel.StatusCode;
@@ -54,8 +52,6 @@ namespace Api.DTOs
             foreach (var logAgoraModel in log.LogAgora)
             {
                 var logAgoraDto = new LogAgoraDTO();
-                logAgoraDto.Id = logAgoraModel.Id;
-                logAgoraDto.LogId = logAgoraModel.LogId;
                 logAgoraDto.Provider = logAgoraModel.Provider;
                 logAgoraDto.HttpMethod = logAgoraModel.HttpMethod;
                 logAgoraDto.StatusCode = logAgoraModel.StatusCode;
