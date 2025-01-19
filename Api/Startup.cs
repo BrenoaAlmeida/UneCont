@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using Infraestrutura;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Model;
-using Infraestrutura;
 using Service;
 
 namespace Api
@@ -30,12 +29,7 @@ namespace Api
             services.AddScoped<UnitOfWork>();
             services.AddScoped<LogService>();
 
-            services.AddMvc()
-                //.AddJsonOptions(options =>
-                //{
-                //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                //})                
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             
 
             //Configuração do Swagger

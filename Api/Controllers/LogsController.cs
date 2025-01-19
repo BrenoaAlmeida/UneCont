@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Model;
 using Service;
 
 namespace Api.Controllers
@@ -18,10 +17,7 @@ namespace Api.Controllers
         /// <summary>
         /// Obtem um arquivo no formato "Minha CDN" e o tranforma no formato "Agora", podendo passar como  entrar uma URL contendo o arquivo TXT ou um  identificador
         /// para um arquivo que ja foi salvo no banco de dados, como POST pode salvar o arquivo no servidor e retornar o path dele  
-        /// </summary>
-        /// <param name="somepara">Required parameter: Example: </param>
-        /// <return>Returns comment</return>
-        /// <response code="200">Ok</response>
+        /// </summary>        
 
         public LogsController(LogService logService)
         {
