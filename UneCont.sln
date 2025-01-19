@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Avaliacao\Api.csproj", "{ECCAE69D-CDB4-450F-BD8A-E0F61319F199}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{ECCAE69D-CDB4-450F-BD8A-E0F61319F199}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{1B24A0BB-EC44-404B-99F1-82187D165CE9}"
 EndProject
@@ -12,6 +12,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infraestrutura", "Infraestrutura\Infraestrutura.csproj", "{6A37508E-4DCA-453E-BC74-1144528B6385}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.csproj", "{6B31777D-33FB-4786-89C8-AC13E76ADF67}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{8E573EC9-95D4-4861-8612-9F96B0BAE99F}"
+	ProjectSection(SolutionItems) = preProject
+		Database\CREATE_DATABASE_UNECONT.sql = Database\CREATE_DATABASE_UNECONT.sql
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
