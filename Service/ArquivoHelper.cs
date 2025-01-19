@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Net.Http;
-using System.Threading.Tasks;
 using Model;
 
 namespace Service
@@ -11,40 +9,7 @@ namespace Service
     public class ArquivoHelper
     {
 
-        private const string PastaParaLogs = "logs";
-
-        public async Task<MemoryStream> BaixarARquivosEZipar(Log log)
-        {
-            bool arquivosExistem = false;
-
-            var caminhos = new List<string>();
-            using (var memoryStream = new MemoryStream())
-            {
-                using (var arquivoZip = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-                {
-                    foreach (var logArquivo in log.LogArquivo)
-                    {
-                        var caminhoDoArquivo = Path.Combine(Directory.GetCurrentDirectory(), PastaParaLogs, logArquivo.NomeArquivo);
-                        if (File.Exists(caminhoDoArquivo))
-                        {
-                            arquivosExistem = true;
-                            var arquivo = arquivoZip.CreateEntry(logArquivo.NomeArquivo, CompressionLevel.Fastest);
-                            using (var entryStream = arquivo.Open())
-                            using (var fileStream = File.OpenRead(caminhoDoArquivo))
-                            {
-                                await fileStream.CopyToAsync(entryStream);
-                            }
-                        }
-                    }
-
-                    if (!arquivosExistem)
-                        return null;
-
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    return memoryStream;
-                }
-            }
-        }
+        private const string PastaParaLogs = "logs";        
 
         public async void BaixarArquivo(LogArquivo logArquivo, string urlDoArquiivo)
         {
@@ -99,47 +64,7 @@ namespace Service
                 Directory.CreateDirectory(pastaNoServidor);
 
             return pastaNoServidor;
-        }
-
-        public string CriarArquivoAgoraAPartirdoArquivoMinhaCdn(List<LogMinhaCdn> logsMinhaCdn)
-        {
-            var dataAtualFormatada = DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss");
-            var pastaNoServidor = ArquivoHelper.CriarPastaDeLogsSeNecessario();
-            var nomeDoArquivo = $"agora_{dataAtualFormatada}.txt";
-            pastaNoServidor = Path.Combine(pastaNoServidor, nomeDoArquivo);
-
-            var writer = new StreamWriter(pastaNoServidor);
-            try
-            {
-                writer.WriteLine("Version: 1.0");
-                writer.WriteLine($"Date: {dataAtualFormatada}");
-                writer.WriteLine("#Fields: provider http-method status-code uri-path time-taken response-size cache-status");
-
-                foreach (var logMinhaCdn in logsMinhaCdn)
-                {
-                    var propriedades = logMinhaCdn.Request.Split(" ");
-
-                    var httpMethod = propriedades[0].Replace("\"", "");
-                    var statusCode = logMinhaCdn.StatusCode;
-                    var uriPath = propriedades[1];
-                    var tempoConvertido = Decimal.Parse(logMinhaCdn.TimeTaken, System.Globalization.CultureInfo.InvariantCulture);
-                    var timeTaken = (int)Math.Round(tempoConvertido, MidpointRounding.AwayFromZero);
-                    var responseSize = logMinhaCdn.ResponseSize;
-                    var cacheStatus = logMinhaCdn.CacheStatus;
-                    writer.WriteLine($"MINHA CDN {httpMethod} {statusCode} {uriPath} {timeTaken} {responseSize} {cacheStatus}");
-                }
-            }
-            finally
-            {
-                if (writer != null)
-                {
-                    writer.Close();
-                }
-            }
-
-            return pastaNoServidor;
-
-        }
+        }        
 
         public Uri RetornarCaminhoDoArquivoNoServidor(string urlBase, string caminhoDoArquivo)
         {
@@ -164,6 +89,89 @@ namespace Service
             }
 
             return arquivosDeLogEmTexto;
+        }
+
+        public string TransformarLogMinhaCdnParaAgora(string url, bool retornarPath, string nomeDoArquivo = "")
+        {
+            // transformar no formato Agora
+            var logNoFormatoMinhaCdn = new HttpClient().GetStringAsync(url).Result; // obtendo arquivo a partir da url fornecida
+            var linhasDeLog = logNoFormatoMinhaCdn.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            return ExtrairLinhasDoLogMinhaCdnParaFormatoLogAgora(retornarPath, ref nomeDoArquivo, linhasDeLog);
+        }
+
+        public string ExtrairLinhasDoLogMinhaCdnParaFormatoLogAgora(bool retornarPath, ref string nomeDoArquivo, string[] linhasDeLog)
+        {
+            var textoDoLogNoFormatoMinhaCdn = "#Version: 1.0 \r\n"
+                + $"#Date: {DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")} \r\n"
+                + "#Fields: provider http-method status-code uri-path time-taken response-size cache-status \r\n";
+
+            foreach (var linha in linhasDeLog)
+            {
+                var propriedades = linha.Split("|");
+                var subPropriedades = propriedades[3];
+                subPropriedades = subPropriedades.ToString();
+                subPropriedades = subPropriedades.Replace("\"", "");
+                var request = subPropriedades.Split(" ");
+                var httpMethod = request[0];
+                var uriPath = request[1];
+                var responseSize = propriedades[0].ToString();
+                var statusCode = propriedades[1].ToString();
+                var cacheStatus = propriedades[2].ToString();
+                var tempoConvertido = Decimal.Parse(propriedades[4].ToString(), System.Globalization.CultureInfo.InvariantCulture);
+                var timeTaken = (int)Math.Round(tempoConvertido, MidpointRounding.AwayFromZero);
+                textoDoLogNoFormatoMinhaCdn += $"MINHA CDN {httpMethod} {statusCode} {uriPath} {timeTaken} {responseSize} {cacheStatus} \r\n";
+            }
+
+            if (!retornarPath)
+                return textoDoLogNoFormatoMinhaCdn;
+
+            // gravar log em pasta no servidor e retornar o path do arquivo
+            if (string.IsNullOrEmpty(nomeDoArquivo))
+                nomeDoArquivo = $"agora_{DateTime.Now.ToString("dd-MM-HH_HH-mm-ss")}.txt";
+
+            return CriarArquivo(nomeDoArquivo, textoDoLogNoFormatoMinhaCdn);
+        }
+
+        public string TransformarLogMinhaCdnParaAgora(List<LogMinhaCdn> logsMinhaCdn, bool retornarPath)
+        {
+            var dataAtual = DateTime.Now;
+
+            if (logsMinhaCdn.Count == 0)
+                return null;
+
+            // transformar no formato Agora
+
+            var textoDoLogNoFormatoMinhaCdn = "#Version: 1.0 \r\n"
+                + $"#Date: {DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")} \r\n"
+                + "#Fields: provider http-method status-code uri-path time-taken response-size cache-status \r\n";
+
+            foreach (var logMinhaCdn in logsMinhaCdn)
+            {
+                var subPropriedades = logMinhaCdn.Request.Replace("\"", "").Split(" ");
+                var httpMethod = subPropriedades[0];
+                var uriPath = subPropriedades[1];
+                var responseSize = logMinhaCdn.ResponseSize;
+                var statusCode = logMinhaCdn.StatusCode;
+                var cacheStatus = logMinhaCdn.CacheStatus;
+                var tempoConvertido = Decimal.Parse(logMinhaCdn.TimeTaken, System.Globalization.CultureInfo.InvariantCulture);
+                var timeTaken = (int)Math.Round(tempoConvertido, MidpointRounding.AwayFromZero);
+
+                textoDoLogNoFormatoMinhaCdn += $"MINHA CDN {httpMethod} {statusCode} {uriPath} {timeTaken} {responseSize} {cacheStatus} \r\n";
+            }
+
+            if (!retornarPath)
+                return textoDoLogNoFormatoMinhaCdn;
+
+            // gravar log em pasta no servidor e retornar o path do arquivo
+            var nomeDoArquivo = $"agora_{DateTime.Now.ToString("dd-MM-HH_HH-mm-ss")}.txt";
+            return CriarArquivo(nomeDoArquivo, textoDoLogNoFormatoMinhaCdn);
+        }
+
+        public void DeletarArquivo(string caminhoDoArquivo)
+        {
+            if (File.Exists(caminhoDoArquivo))
+                File.Delete(caminhoDoArquivo);
         }
     }
 }

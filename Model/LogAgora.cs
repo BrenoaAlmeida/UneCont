@@ -29,6 +29,7 @@ namespace Model
         public int TimeTaken { get; set; }
 
         [Required]
+        [MaxLength(20)]
         public string ResponseSize { get; set; }
 
         [Required]

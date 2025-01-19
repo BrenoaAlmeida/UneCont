@@ -6,96 +6,83 @@ using Model;
 using Moq;
 using Infraestrutura;
 using Service;
+using System;
+using System.IO;
 
 namespace Tests
 {
     [TestClass]
     public class LogTest
     {
-        //[TestMethod]
-        //public void DeveMapearMinhaCdnParaAgora()
-        //{
-        //    //ARRANGE            
-        //    var mockUneContext = new Mock<UneContexto>();
-        //    var unitOfWork = new UnitOfWork(mockUneContext.Object);
-        //    var service = new LogService(unitOfWork, mockUneContext);
-        //    mockUneContext.Setup(x => x.Log.Find(It.IsAny<int>())).Returns(new Log()
-        //    {
-        //        Id = 1,
-        //        LogMinhaCdn = new List<LogMinhaCdn>()
-        //        {
-        //            new LogMinhaCdn()
-        //            {
-        //                Id = 1,
-        //                LogId =1,
-        //                ResponseSize = "312",
-        //                StatusCode = "200",
-        //                CacheStatus = "HIT",
-        //                Request = "\"GET /robots.txt HTTP/1.1\"",
-        //                TimeTaken = "100.2",
-        //            }
-        //        }
-        //    });
-        //    //ACT            
-        //}
 
         [TestMethod]
-        public void DeveBuscarLogsSalvosNoBancoPorIdentificador()
+        public void DeveTransformarLogMinhaCdnEmLogAgora()
         {
             //ARRANGE
-            var context = Helper.ObterContextoEmMemoria();
-            var logId = 1;
-            context.Log.Add(new Log()
-            {
-                Id = logId,
-                Url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt",
-                LogArquivo = new List<LogArquivo>()
-                {
-                    new LogArquivo(){
-                        NomeArquivo = "teste1.txt",
-                    }
-                },
-                LogMinhaCdn = new List<LogMinhaCdn>(){
-                    new LogMinhaCdn (){
-                        LogId = logId,
-                        Id = 1,
-                        ResponseSize = "312",
-                        StatusCode = "200",
-                        Request = "\"GET /robots.txt HTTP/1.1\"",
-                        TimeTaken = "100.2",
-                        CacheStatus = "HIT"
-                    },
-                    new LogMinhaCdn (){
-                        LogId = logId,
-                        Id = 2,
-                        ResponseSize = "101",
-                        StatusCode = "200",
-                        Request = "\"POST /myImages HTTP/1.1\"",
-                        TimeTaken = "319.4",
-                        CacheStatus = "MISS"
-                    }
-                }
-            });
+            var logMInhaCdn = new string[4];
+            logMInhaCdn[0] = "312|200|HIT|\"GET /robots.txt HTTP/1.1\"|100.2";
+            logMInhaCdn[1] = "101|200|MISS|\"POST /myImages HTTP/1.1\"|319.4";
+            logMInhaCdn[2] = "199|404|MISS|\"GET /not-found HTTP/1.1\"|142.9";
+            logMInhaCdn[3] = "312|200|INVALIDATE|\"GET /robots.txt HTTP/1.1\"|245.1";
 
             //ACT
-            context.SaveChanges();
-            var logs = context.Log.Where(r => r.Id == logId);
-
-            //ASSERT
-            Assert.IsTrue(logs.Any());
+            var arquivoHelper = new ArquivoHelper();
+            string nomeDoArquivo = "agora";
+            var result = arquivoHelper.ExtrairLinhasDoLogMinhaCdnParaFormatoLogAgora(retornarPath: false, ref nomeDoArquivo, logMInhaCdn);
+            var linhasDeLogAgora = result.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var primeraLinhaLogAgora = linhasDeLogAgora[3].ToString().Split(" ");
+            //ASSERT            
+            if (primeraLinhaLogAgora[2] != "GET") //http-method
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[4] != "/robots.txt") //uri-path            
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[6] != "312") //response-size
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[3] != "200") //status-code
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[5] != "100") //time-taken
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[7] != "HIT") //cache-status
+                Assert.IsTrue(false);
         }
 
+        //deve ler um  arquivo minha cdn e o transformar em um arquivo e retornar a url do  arquivo transformado com o conteudo certo
         [TestMethod]
-        public void DeveTransformarArquivoNoFormatoMinhaCdnParaAgora()
+        public void DeveTransformarECriarUmArquivoERetornarNo()
         {
-            //ARRANGE            
-            //var uneContext = Helper.ObterContextoEmMemoria();
-            //var unitOfWork = new UnitOfWork(uneContext);
-            //var url = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
-            //var logService = new LogService();
-            //var log = logService.MapearArquivoDeTextoParaMinhaCdn(url);
-            //log = logService.MapearModeloMinhaCdnParaModeloAgora(log);
+            //ARRANGE
+            var logMInhaCdn = new string[4];
+            logMInhaCdn[0] = "312|200|HIT|\"GET /robots.txt HTTP/1.1\"|100.2";
+            logMInhaCdn[1] = "101|200|MISS|\"POST /myImages HTTP/1.1\"|319.4";
+            logMInhaCdn[2] = "199|404|MISS|\"GET /not-found HTTP/1.1\"|142.9";
+            logMInhaCdn[3] = "312|200|INVALIDATE|\"GET /robots.txt HTTP/1.1\"|245.1";
 
+            //ACT
+            var arquivoHelper = new ArquivoHelper();
+            string nomeDoArquivo = "agora";
+            var result = arquivoHelper.ExtrairLinhasDoLogMinhaCdnParaFormatoLogAgora(retornarPath: true, ref nomeDoArquivo, logMInhaCdn);
+
+            if (!File.Exists(result))
+                Assert.IsTrue(false);
+
+            var logAgora = File.ReadAllText(result);
+            var linhasDeLogAgora = logAgora.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var primeraLinhaLogAgora = linhasDeLogAgora[3].ToString().Split(" ");
+            //ASSERT            
+            if (primeraLinhaLogAgora[2] != "GET") //http-method
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[4] != "/robots.txt") //uri-path            
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[6] != "312") //response-size
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[3] != "200") //status-code
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[5] != "100") //time-taken
+                Assert.IsTrue(false);
+            if (primeraLinhaLogAgora[7] != "HIT") //cache-status
+                Assert.IsTrue(false);
+
+            arquivoHelper.DeletarArquivo(result);
         }
     }
 }

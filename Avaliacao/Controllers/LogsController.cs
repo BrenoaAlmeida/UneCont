@@ -68,7 +68,7 @@ namespace Api.Controllers
                 var result = _logService.TransformarLogMinhaCdnParaAgora(identificador, retornarCaminho);
 
                 if (string.IsNullOrEmpty(result))
-                    return StatusCode((int)HttpStatusCode.NoContent, "Nenhum registro encontrado para o identificador informado!");
+                    return NotFound("Nenhum registro encontrado para o identificador informado!");
 
                 if (retornarCaminho)
                 {
